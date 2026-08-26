@@ -60,12 +60,12 @@
     .product-name{font-size:14px;font-weight:600;margin-bottom:2}
     .product-meta{font-size:11px;color:var(--gray-700)}
     .product-price{font-size:16px;font-weight:700;color:var(--pink-deep);margin-top:4}
-    .nav-bottom{display:flex;justify-content:space-around;background:var(--pink-deep);padding:6px 0;position:sticky;bottom:0;z-index:100}
+    .nav-bottom{position:fixed;bottom:0;left:0;right:0;margin:0 auto;width:100%;max-width:430px;display:flex;justify-content:space-around;background:var(--pink-deep);padding:6px 0 8;z-index:100;box-shadow:0 -3px 12px rgba(231,84,128,.28)}
     .nav-bottom .nav-item{flex:1;text-align:center;color:var(--white);font-size:10px;font-weight:600;padding:6px 2px;cursor:pointer}
     .nav-bottom .nav-item i{display:block;font-size:18px;margin-bottom:2;font-style:normal}
     .nav-bottom .nav-item.active{background:rgba(255,255,255,.15)}
     .view{display:none}
-    .view.active{display:block}
+    .view.active{display:block;padding-bottom:78px}
     .loading{text-align:center;padding:32px;color:var(--gray-700)}
     #toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(44,44,44,.9);color:var(--white);padding:10px 20px;border-radius:var(--radius-sm);font-size:13px;opacity:0;transition:opacity .3s;z-index:999}
     #toast.show{opacity:1}
@@ -448,21 +448,27 @@
     document.getElementById('login-username').addEventListener('keypress', e=>{ if(e.key==='Enter'){ document.getElementById('login-pin').focus(); } });
 
     async function doLogin(){
-            const username = document.getElementById('login-username').value.trim();
+      const username = document.getElementById('login-username').value.trim();
       const pin = document.getElementById('login-pin').value.trim();
       if(!username||!pin){ showToast('Masukkan username dan PIN!'); return; }
       if(!/^\d{4}$/.test(pin)){ showToast('PIN harus 4 digit angka!'); return; }
+      const btn=document.getElementById('btn-login');
+      btn.disabled=true; btn.textContent='Memproses...';
       try {
         const data = await apiCall('login', { username:username, pin:pin, shift:state.shift });
         if(data.success){
           saveAuth(data.token, data.username, data.role, data.shift);
           state.token=data.token; state.username=data.username; state.role=data.role; state.shift=data.shift;
-          // load products for POS
-                    try { const pd = await apiCall('get-products', {}, state.token); state.products = pd.products||[]; } catch(e){ console.warn('gagal load produk (offline?)'); }
-          enterApp();
-          flushOfflineQueue();
+          enterApp();                                   // tampilkan app SEGERA
+          showToast('Selamat datang, '+data.username+'!');
+          // muat produk di background (tidak menahan tampilan)
+          apiCall('get-products', {}, state.token)
+            .then(pd=>{state.products=pd.products||[];})
+            .catch(()=>{console.warn('produk belum termuat (offline?)')});
+          flushOfflineQueue().catch(()=>{});
         }
       } catch(err){ showToast(err.message || 'Login gagal!'); }
+      btn.disabled=false; btn.textContent='Masuk';
     }
 
     /* ===== DASHBOARD ===== */
@@ -573,23 +579,38 @@
       document.getElementById('btn-close-receipt').onclick=()=>document.getElementById('receipt-modal').style.display='none';
     }
 
-    /* ===== BARCODE SCANNER ===== */
-    let scanner=null;
+    /* ===== BARCODE SCANNER (reusable) ===== */
+    let scanner=null, scannerCallback=null;
+    function closeScanner(){
+      if(scanner){try{scanner.reset();}catch(e){} scanner=null;}
+      document.getElementById('scanner-overlay').style.display='none';
+    }
+    function openScanner(cb){
+      scannerCallback=cb;
+      const overlay=document.getElementById('scanner-overlay');
+      overlay.style.display='block';
+      if(window.ZXing&&ZXing.BrowserQRCodeReader){
+        try{
+          scanner=new ZXing.BrowserQRCodeReader();
+          scanner.decodeFromVideoDevice(undefined,document.getElementById('scanner-video'),(result,err)=>{
+            if(result){
+              const code=result.getText();
+              closeScanner();
+              if(scannerCallback)scannerCallback(code);
+            }
+          });
+        }catch(e){closeScanner();showToast('Kamera tidak tersedia.');}
+      } else {closeScanner();showToast('Scanner belum siap, coba lagi.');}
+    }
     document.getElementById('btn-scan').onclick=()=>document.getElementById('btn-scanner-open').click();
     document.getElementById('btn-scanner-open').onclick=()=>{
-      const overlay=document.getElementById('scanner-overlay');overlay.style.display='block';
-      if(window.ZXing&&ZXing.BrowserQRCodeReader){
-        scanner=new ZXing.BrowserQRCodeReader();
-        scanner.decodeFromVideoDevice(undefined,document.getElementById('scanner-video'),(result,err)=>{
-          if(result){const code=result.getText();overlay.style.display='none';scanner.reset();scanner=null;
-            const p=state.products.find(x=>String(x.Barcode)===code);
-            if(p){addToCart(p.ProductID);showToast('Ditemukan: '+p.Name);}
-            else{document.getElementById('pos-search').value=code;renderProductList(code);showToast('Barcode: '+code);}
-          }
-        });
-      } else {overlay.style.display='none';showToast('Scanner belum siap.');}
+      openScanner(code=>{
+        const p=state.products.find(x=>String(x.Barcode)===code);
+        if(p){addToCart(p.ProductID);showToast('Ditemukan: '+p.Name);}
+        else{document.getElementById('pos-search').value=code;renderProductList(code);showToast('Barcode: '+code);}
+      });
     };
-    document.getElementById('scanner-close').onclick=()=>{if(scanner){scanner.reset();scanner=null;}document.getElementById('scanner-overlay').style.display='none';};
+    document.getElementById('scanner-close').onclick=closeScanner;
     
     /* ===== STOCK FUNCTIONS ===== */
     let adjustState={location:'warehouse',productID:'',type:'in',qty:'',note:''};
@@ -648,11 +669,22 @@
     /* ===== PRODUCTS MANAGEMENT ===== */
     document.getElementById('btn-add-product').onclick=()=>{
       const sel=document.getElementById('prod-tbody');
-      const p={ProductID:'new',SKU:'',Name:'',Barcode:'',Price:0,Category:'',StockMin:0};
       let row=document.createElement('tr');
-      row.innerHTML='<td><input class="form-input" style="padding:4px;font-size:12px;width:100%" value="" oninput="window._editName=this.value"></td><td><input class="form-input" style="padding:4px;font-size:12px" value="" oninput="window._editSku=this.value"></td><td><input class="form-input" style="padding:4px;font-size:12px" value="" oninput="window._editBarcode=this.value"></td><td><input class="form-input" style="padding:4px;font-size:12px" value="0" oninput="window._editPrice=this.value"></td><td><input class="form-input" style="padding:4px;font-size:12px" value="0" oninput="window._editMin=this.value"></td><td><button onclick="saveProduct(\'new\')" class="btn btn-sm btn-pink" style="font-size:10px;">Save</button></td>';
-      sel.prepend(row); window._editName='';window._editSku='';window._editBarcode='';window._editPrice=0;window._editMin=0;
+      row.innerHTML='<td><input id="np-name" class="form-input" style="padding:4px;font-size:12px;width:100%" placeholder="Nama barang"></td>'
+        +'<td><input id="np-sku" class="form-input" style="padding:4px;font-size:12px;width:70px" placeholder="SKU"></td>'
+        +'<td><div style="display:flex;gap:4;align-items:center;"><input id="np-barcode" class="form-input" style="padding:4px;font-size:12px;width:80px" placeholder="Barcode"><button onclick="scanNewProduct()" class="btn btn-sm btn-pink" style="font-size:11px;padding:5px 7px;" title="Scan kamera">📷</button></div></td>'
+        +'<td><input id="np-price" class="form-input" type="number" inputmode="numeric" style="padding:4px;font-size:12px;width:80px" placeholder="Harga"></td>'
+        +'<td><input id="np-min" class="form-input" type="number" inputmode="numeric" style="padding:4px;font-size:12px;width:50px" placeholder="Min"></td>'
+        +'<td><button onclick="saveProduct()" class="btn btn-sm btn-pink" style="font-size:10px;">Save</button></td>';
+      sel.prepend(row);
+      document.getElementById('np-name').focus();
     };
+    function scanNewProduct(){
+      openScanner(code=>{
+        const el=document.getElementById('np-barcode');
+        if(el){el.value=code;showToast('Barcode terbaca: '+code);}
+      });
+    }
     document.getElementById('prod-search').addEventListener('input',loadProducts);
     async function loadProducts(){
       try{
@@ -739,10 +771,19 @@
         loadProducts();
       }catch(e){showToast(e.message||'Gagal update');console.error(e);}
     }
-    async function saveProduct(){  // save new product from inline row
-      const name=window._editName||'';const sku=window._editSku||'';const barcode=window._editBarcode||'';const price=Number(window._editPrice)||0;const min=Number(window._editMin)||0;
-      if(!name){showToast('Nama wajib!');return;}
-      try{await apiCall('save-product',{productID:('P-'+Date.now()),sku:sku,name:name,barcode:barcode,price:price,category:'',stockMin:min},state.token);showToast('Produk ditambahkan');loadProducts();}catch(e){showToast(e.message||'Gagal');}
+    async function saveProduct(){
+      const name=(document.getElementById('np-name')||{}).value||'';
+      const sku=(document.getElementById('np-sku')||{}).value||'';
+      const barcode=(document.getElementById('np-barcode')||{}).value||'';
+      const price=Number((document.getElementById('np-price')||{}).value)||0;
+      const min=Number((document.getElementById('np-min')||{}).value)||0;
+      if(!name){showToast('Nama barang wajib!');return;}
+      try{
+        await apiCall('save-product',{productID:('P-'+Date.now()),sku:sku,name:name,barcode:barcode,price:price,category:'',stockMin:min},state.token);
+        showToast('Barang ditambahkan ✓');
+        try{const pd=await apiCall('get-products',{},state.token);state.products=pd.products||[];}catch(e){}
+        loadProducts();
+      }catch(e){showToast(e.message||'Gagal simpan');}
     }
     function promptAsync(message,defVal){
       return new Promise(resolve=>{ const r=prompt(message,defVal); resolve(r); });
@@ -776,9 +817,11 @@
     /* ===== INIT ===== */
     async function init(){
       if(initLogin()){
-        try{const data=await apiCall('get-products',{},state.token);state.products=data.products||[];}catch(e){console.warn('offline or no products');}
         enterApp();
-        flushOfflineQueue();
+        apiCall('get-products',{},state.token)
+          .then(d=>{state.products=d.products||[];})
+          .catch(()=>{console.warn('offline or no products');});
+        flushOfflineQueue().catch(()=>{});
       } else {
         showLoginScreen();
       }
