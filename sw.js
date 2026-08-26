@@ -1,7 +1,7 @@
 /* ===== Service Worker — Ms Glow POS ===== */
 /* Cache HTML, CSS, JS, manifest + icon; network-first untuk API */
 
-const CACHE_NAME = 'ms-glow-pos-v1';
+const CACHE_NAME = 'ms-glow-pos-v2';
 const OFFLINE_URL = '/index.html';
 const ASSETS = [
   '/',

@@ -60,9 +60,9 @@
     .product-name{font-size:14px;font-weight:600;margin-bottom:2}
     .product-meta{font-size:11px;color:var(--gray-700)}
     .product-price{font-size:16px;font-weight:700;color:var(--pink-deep);margin-top:4}
-    .nav-bottom{display:flex;justify-content:space-around;background:var(--pink-deep);padding:8px 0;position:sticky;bottom:0;z-index:100}
-    .nav-bottom .nav-item{flex:1;text-align:center;color:var(--white);font-size:11px;font-weight:600;padding:8px 4px}
-    .nav-bottom .nav-item i{display:block;font-size:20px;margin-bottom:2}
+    .nav-bottom{display:flex;justify-content:space-around;background:var(--pink-deep);padding:6px 0;position:sticky;bottom:0;z-index:100}
+    .nav-bottom .nav-item{flex:1;text-align:center;color:var(--white);font-size:10px;font-weight:600;padding:6px 2px;cursor:pointer}
+    .nav-bottom .nav-item i{display:block;font-size:18px;margin-bottom:2;font-style:normal}
     .nav-bottom .nav-item.active{background:rgba(255,255,255,.15)}
     .view{display:none}
     .view.active{display:block}
@@ -315,12 +315,14 @@
 
     <!-- BOTTOM NAVIGATION -->
     <nav class="nav-bottom">
-      <div class="nav-item active" data-nav="dashboard"><i>🏠</i>Dashboard</div>
+      <div class="nav-item active" data-nav="dashboard"><i>🏠</i>Home</div>
       <div class="nav-item" data-nav="pos"><i>🛒</i>POS</div>
+      <div class="nav-item" data-nav="products"><i>🏷️</i>Barang</div>
       <div class="nav-item" data-nav="warehouse"><i>📦</i>Gudang</div>
-      <div class="nav-item" data-nav="gallery"><i>🛍️</i>Rak Pajang</div>
+      <div class="nav-item" data-nav="gallery"><i>🛍️</i>Rak</div>
+      <div class="nav-item" data-nav="sales"><i>🧾</i>Riwayat</div>
       <div class="nav-item" data-nav="report"><i>📊</i>Rekap</div>
-      <div class="nav-item" data-nav="settings"><i>⚙️</i>Pengaturan</div>
+      <div class="nav-item" data-nav="settings"><i>⚙️</i>Setelan</div>
     </nav>
 
   </div>
@@ -749,12 +751,13 @@
         showView('login-init');
       }
     }
-    function showView(name){
+        function showView(name){
       document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
       const el=document.getElementById('view-'+(name==='login-init'?'login':name));
       if(el)el.classList.add('active');
       document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
-      if(name!=='login-init')document.querySelector('.nav-item[data-nav="'+name+'"]').classList.add('active');
+      const nv=document.querySelector('.nav-item[data-nav="'+name+'"]');
+      if(nv)nv.classList.add('active');
       if(name==='pos')initPos();
       if(name==='dashboard')loadDashboard();
       if(name==='products')loadProducts();
