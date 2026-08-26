@@ -1,0 +1,11 @@
+# Ms Glow POS
+# Ignore
+node_modules/
+npm-debug.log
+.env
+dist/
+.vercel/
+.vercel_build_output/
+.DS_Store
+Thumbs.db
+*.log

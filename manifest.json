@@ -1,0 +1,23 @@
+{
+  "short_name": "Ms Glow",
+  "name": "Ms Glow POS - Penjualan & Stok",
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "type": "image/png",
+      "sizes": "192x192",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "maskable"
+    }
+  ],
+  "start_url": "/",
+  "display": "standalone",
+  "theme_color": "#ffd1dc",
+  "background_color": "#fff5f8",
+  "description": "Aplikasi POS & Pendataan Stok Ms Glow. Backend: Google Sheets + Apps Script."
+}
