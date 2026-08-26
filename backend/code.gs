@@ -121,6 +121,8 @@ function handleLogin(payload) {
   const username = String(payload.username || '').trim().toLowerCase();
   const pin      = String(payload.pin || '').trim();
 
+  if (!/^\d{4}$/.test(pin)) throw new Error('PIN harus 4 digit angka.');
+
   const cache = CacheService.getScriptCache();
   const lockKey = 'lock_' + username;
   if (cache.get(lockKey)) {
@@ -466,12 +468,12 @@ function handleManageUser(payload, token) {
     const s = ss.insertSheet('Users');
     s.getRange(1,1,1,headers.length).setValues([headers]);
   }
-  const username = String(payload.username || '').trim();
+    const username = String(payload.username || '').trim();
   const pin      = String(payload.pin || '').trim();
   const role     = String(payload.role || 'operator').trim();
   const method   = String(payload.method || 'add').trim().toLowerCase();
   if (!username) throw new Error('Username wajib.');
-  if (!pin)      throw new Error('PIN wajib.');
+  if (!/^\d{4}$/.test(pin)) throw new Error('PIN harus 4 digit angka.');
 
   const users = getSheetData('Users');
   if (method === 'add') {
@@ -498,7 +500,8 @@ function handleChangePin(payload, token) {
   const auth = requireAuth(token);
   const oldPin = String(payload.oldPin || '').trim();
   const newPin = String(payload.newPin || '').trim();
-  if (oldPin.length < 1 || newPin.length < 1) throw new Error('PIN lama dan baru wajib.');
+  if (oldPin.length < 1) throw new Error('PIN lama wajib.');
+  if (!/^\d{4}$/.test(newPin)) throw new Error('PIN baru harus 4 digit angka.');
   const users = getSheetData('Users');
   const user  = users.find(u => u.Username === auth.username);
   if (!user) throw new Error('User tidak ditemukan.');
@@ -635,4 +638,31 @@ function setupSheet(ss, name, headers) {
       s.getRange(1,1,1, merged.length).setValues([merged]);
     }
   }
+}
+
+/* ==================== RESET DARURAT — JALANKAN DARI EDITOR ====================
+ * Pilih fungsi resetAdminPin1234 lalu klik Run.
+ * Fungsi ini: (1) membersihkan kunci login/lockout, (2) mengembalikan PIN
+ * user "admin" menjadi 1234. Hanya pemilik spreadsheet yang bisa menjalankan. */
+function resetAdminPin1234() {
+  const cache = CacheService.getScriptCache();
+  cache.remove('lock_admin');
+  cache.remove('rf_admin');
+
+  const ss    = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const sheet = ss.getSheetByName('Users');
+  if (!sheet) { ss.insertSheet('Users'); }
+
+  const rows    = sheet.getDataRange().getValues();
+  const headers = rows[0] || ['Username','PIN','Role','CreatedAt'];
+  const iu = headers.indexOf('Username'), ip = headers.indexOf('PIN');
+  for (let i = 1; i < rows.length; i++) {
+    if (String(rows[i][iu]).trim().toLowerCase() === 'admin') {
+      sheet.getRange(i + 1, ip + 1).setValue('1234');
+      Logger.log('OK: PIN admin direset ke 1234 dan kunci login dibersihkan.');
+      return;
+    }
+  }
+  sheet.appendRow(['admin', '1234', 'admin', new Date()]);
+  Logger.log('OK: User admin dibuat ulang (PIN 1234). Kunci login dibersihkan.');
 }

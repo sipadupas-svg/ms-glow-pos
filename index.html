@@ -105,7 +105,7 @@
       <div class="form-group"><div class="form-label">Username</div>
         <input id="login-username" class="form-input" type="text" placeholder="Masukkan username" autocomplete="username"></div>
       <div class="form-group"><div class="form-label">PIN</div>
-        <input id="login-pin" class="form-input" type="password" placeholder="Masukkan PIN" inputmode="numeric"></div>
+        <input id="login-pin" class="form-input" type="password" placeholder="PIN 4 digit" inputmode="numeric" maxlength="4"></div>
 
       <div class="form-group"><div class="form-label">Pilih Shift Kerja</div>
         <div class="shift-toggle">
@@ -326,8 +326,8 @@
       <div class="card">
         <div id="settings-user-info" style="font-size:14px;margin-bottom:12;"></div>
         <div class="form-group"><div class="form-label">Ganti PIN</div>
-          <input id="set-old-pin" class="form-input" type="password" placeholder="PIN lama" inputmode="numeric" style="margin-bottom:8px;">
-          <input id="set-new-pin" class="form-input" type="password" placeholder="PIN baru" inputmode="numeric">
+          <input id="set-old-pin" class="form-input" type="password" placeholder="PIN lama (4 digit)" inputmode="numeric" maxlength="4" style="margin-bottom:8px;">
+          <input id="set-new-pin" class="form-input" type="password" placeholder="PIN baru (4 digit)" inputmode="numeric" maxlength="4">
         </div>
         <button id="btn-change-pin" class="btn btn-block btn-pink">Ganti PIN</button>
       </div>
@@ -448,9 +448,10 @@
     document.getElementById('login-username').addEventListener('keypress', e=>{ if(e.key==='Enter'){ document.getElementById('login-pin').focus(); } });
 
     async function doLogin(){
-      const username = document.getElementById('login-username').value.trim();
+            const username = document.getElementById('login-username').value.trim();
       const pin = document.getElementById('login-pin').value.trim();
       if(!username||!pin){ showToast('Masukkan username dan PIN!'); return; }
+      if(!/^\d{4}$/.test(pin)){ showToast('PIN harus 4 digit angka!'); return; }
       try {
         const data = await apiCall('login', { username:username, pin:pin, shift:state.shift });
         if(data.success){
@@ -749,9 +750,10 @@
 
     /* ===== SETTINGS ===== */
     document.getElementById('btn-change-pin').onclick=async()=>{
-      const oldPin=document.getElementById('set-old-pin').value;
+            const oldPin=document.getElementById('set-old-pin').value;
       const newPin=document.getElementById('set-new-pin').value;
       if(!oldPin||!newPin){showToast('PIN lama & baru wajib!');return;}
+      if(!/^\d{4}$/.test(newPin)){showToast('PIN baru harus 4 digit angka!');return;}
       try{const data=await apiCall('change-pin',{oldPin:oldPin,newPin:newPin},state.token);if(data.success){showToast(data.message);document.getElementById('set-old-pin').value='';document.getElementById('set-new-pin').value='';}}catch(e){showToast(e.message||'Gagal ganti PIN');}
     };
     document.getElementById('btn-logout').onclick=()=>{ clearAuth(); state.token=null; state.products=[]; state.cart=[]; showLoginScreen(); };
