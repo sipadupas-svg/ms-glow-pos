@@ -110,6 +110,8 @@
     .table-wrap{overflow-x:auto;border-radius:12px;border:1px solid var(--gray-200);background:#fff}
     .table-wrap table{min-width:430px;margin:0}
     #scanner-reader video{width:100% !important;border-radius:16px}
+    #scanner-overlay #scanner-reader{margin-top:70px}
+    .close-btn{top:20px !important;right:16px !important}
 </style>
 </head>
 <body>
@@ -228,7 +230,11 @@
     <div id="scanner-overlay">
       <div id="scanner-reader" style="width:92vw;max-width:430px;border-radius:16px;overflow:hidden;"></div>
       <div class="close-btn" id="scanner-close">✕</div>
-      <div style="position:absolute;bottom:80px;left:50%;transform:translateX(-50%);color:#fff;font-size:14px;text-align:center;z-index:2;background:rgba(0,0,0,.45);padding:6px 14px;border-radius:20px;">Arahkan barcode / QR ke kamera</div>
+      <div id="scanner-hint" style="position:absolute;top:24px;left:50%;transform:translateX(-50%);color:#fff;font-size:13px;text-align:center;z-index:2;background:rgba(0,0,0,.55);padding:6px 16px;border-radius:20px;">Mengaktifkan kamera...</div>
+      <div style="position:absolute;bottom:36px;left:50%;transform:translateX(-50%);display:flex;gap:6;z-index:2;width:88vw;max-width:400px;">
+        <input id="scanner-manual" type="text" inputmode="numeric" placeholder="Gagal scan? Ketik barcode..." style="flex:1;padding:12px;border-radius:12px;border:none;font-size:14px;background:#fff;">
+        <button id="scanner-manual-ok" class="btn btn-pink" style="padding:10px 16px;">OK</button>
+      </div>
     </div>
 
     <!-- SALES HISTORY -->
@@ -635,16 +641,30 @@
       scannerCallback=cb;
       if(!window.Html5Qrcode){ showToast('Pemindai belum termuat, coba lagi.'); return; }
       const overlay=document.getElementById('scanner-overlay');
+      const hint=document.getElementById('scanner-hint');
+      const manual=document.getElementById('scanner-manual');
+      if(manual)manual.value='';
       overlay.style.display='block';
+      if(hint)hint.textContent='Mengaktifkan kamera...';
       setTimeout(()=>{
         try{
           html5Scanner=new Html5Qrcode('scanner-reader');
           html5Scanner.start(
             {facingMode:'environment'},
-            {fps:10, qrbox:{width:250,height:160}},
-            text=>{ closeScanner(); if(scannerCallback)scannerCallback(String(text).trim()); },
+            {
+              fps:15,
+              qrbox:(vw,vh)=>{ const s=Math.floor(Math.min(vw,vh)*0.72); return {width:s,height:Math.max(120,Math.floor(s*0.6))}; },
+              aspectRatio:(window.innerWidth>window.innerHeight)?1.777:0.75,
+              experimentalFeatures:{useBarCodeDetectorIfSupported:true}
+            },
+            text=>{
+              closeScanner();
+              if(scannerCallback)scannerCallback(String(text).trim());
+            },
             ()=>{}
-          ).catch(err=>{
+          ).then(()=>{
+            if(hint)hint.textContent='📷 Memindai... tahan barcode tetap & dekatkan 10-15 cm';
+          }).catch(err=>{
             console.error('camera error:',err);
             closeScanner();
             showToast('Kamera tidak bisa diakses. Izinkan kamera di browser!');
@@ -656,6 +676,12 @@
         }
       },150);
     }
+    document.getElementById('scanner-manual-ok').onclick=()=>{
+      const v=(document.getElementById('scanner-manual').value||'').trim();
+      if(!v){showToast('Ketik kode barcode dulu');return;}
+      closeScanner();
+      if(scannerCallback)scannerCallback(v);
+    };
     document.getElementById('btn-scan').onclick=()=>document.getElementById('btn-scanner-open').click();
     document.getElementById('btn-scanner-open').onclick=()=>{
       openScanner(code=>{
