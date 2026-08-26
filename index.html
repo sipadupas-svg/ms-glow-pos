@@ -649,12 +649,25 @@
       setTimeout(()=>{
         try{
           html5Scanner=new Html5Qrcode('scanner-reader');
+
+          /* Format barcode ritel yang paling sering dipakai —
+             membatasi format membuat deteksi LEBIH CEPAT & AKURAT */
+          const F=window.Html5QrcodeSupportedFormats;
+          const scanFormats=(F&&F.EAN_13)?[
+            F.EAN_13,F.EAN_8,F.UPC_A,F.UPC_E,
+            F.CODE_128,F.CODE_39,F.ITF,F.CODABAR,
+            F.QR_CODE,F.DATA_MATRIX
+          ]:undefined;
+
           html5Scanner.start(
-            {facingMode:'environment'},
+            {facingMode:'environment',
+             width:{ideal:1280},   /* resolusi tinggi = barcode kecil terbaca */
+             height:{ideal:720}},
             {
-              fps:15,
-              qrbox:(vw,vh)=>{ const s=Math.floor(Math.min(vw,vh)*0.72); return {width:s,height:Math.max(120,Math.floor(s*0.6))}; },
+              fps:20,
+              qrbox:(vw,vh)=>{ const s=Math.floor(Math.min(vw,vh)*0.78); return {width:s,height:Math.max(130,Math.floor(s*0.62))}; },
               aspectRatio:(window.innerWidth>window.innerHeight)?1.777:0.75,
+              formatsToSupport:scanFormats,
               experimentalFeatures:{useBarCodeDetectorIfSupported:true}
             },
             text=>{
@@ -663,7 +676,7 @@
             },
             ()=>{}
           ).then(()=>{
-            if(hint)hint.textContent='📷 Memindai... tahan barcode tetap & dekatkan 10-15 cm';
+            if(hint)hint.textContent='📷 Memindai... tahan barcode tetap & dekatkan 8-12 cm';
           }).catch(err=>{
             console.error('camera error:',err);
             closeScanner();
@@ -788,7 +801,7 @@
           const rows=state.products.filter(p=>String(p.Name).toLowerCase().includes(q)||String(p.SKU||'').toLowerCase().includes(q));
           const tb=document.getElementById('prod-tbody');
           if(state.role==='admin'){
-            tb.innerHTML=rows.length?rows.map(p=>'<tr><td>'+p.Name+'</td><td>'+(p.SKU||'')+'</td><td>'+(p.Barcode||'')+'</td><td>'+fmtCurrency(p.Price)+'</td><td>'+(p.StockMin||0)+'</td><td><button onclick="editProduct(\''+p.ProductID+'\')" class="btn btn-sm btn-gray" style="font-size:10px;">✏</button></td></tr>').join('')
+            tb.innerHTML=rows.length?rows.map(p=>'<tr><td>'+p.Name+'</td><td>'+(p.SKU||'')+'</td><td>'+(p.Barcode||'')+'</td><td>'+fmtCurrency(p.Price)+'</td><td>'+(p.StockMin||0)+'</td><td style="white-space:nowrap;"><button onclick="editProduct(\''+p.ProductID+'\')" class="btn btn-sm btn-gray" style="font-size:10px;">✏</button> <button onclick="deleteProduct(\''+p.ProductID+'\')" class="btn btn-sm btn-danger" style="font-size:10px;">🗑</button></td></tr>').join('')
               :'<tr><td colspan="6" class="loading">Tidak ditemukan</td></tr>';
           }else{
             tb.innerHTML=rows.length?rows.map(p=>'<tr><td>'+p.Name+'</td><td>'+(p.SKU||'')+'</td><td>'+(p.Barcode||'')+'</td><td>'+fmtCurrency(p.Price)+'</td><td>'+(p.StockMin||0)+'</td></tr>').join('')
@@ -888,6 +901,17 @@
         try{const pd=await apiCall('get-products',{},state.token);state.products=pd.products||[];}catch(e){}
         loadProducts();
       }catch(e){showToast(e.message||'Gagal memperbarui');}
+    }
+    async function deleteProduct(productID){
+      const p=state.products.find(x=>String(x.ProductID)===productID);
+      if(!p)return;
+      if(!confirm('Hapus barang "'+p.Name+'" dari katalog?\n\nRiwayat penjualan & log stok lama tetap tersimpan.'))return;
+      try{
+        await apiCall('delete-product',{productID:productID},state.token);
+        showToast('Barang dihapus ✓');
+        state.products=state.products.filter(x=>String(x.ProductID)!==productID);
+        loadProducts();
+      }catch(e){showToast(e.message||'Gagal menghapus');}
     }
     async function saveProduct(){
       const name=(document.getElementById('np-name')||{}).value||'';

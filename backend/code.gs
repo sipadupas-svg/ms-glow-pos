@@ -43,6 +43,7 @@ function doPost(e) {
       case 'login':                 res = handleLogin(payload); break;
       case 'get-products':          res = handleGetProducts(token); break;
       case 'save-product':          res = handleSaveProduct(payload, token); break;
+      case 'delete-product':        res = handleDeleteProduct(payload, token); break;
       case 'get-stock-summary':     res = handleGetStockSummary(token); break;
       case 'adjust-warehouse':      res = handleAdjustWarehouse(payload, token); break;
       case 'adjust-gallery':        res = handleAdjustGallery(payload, token); break;
@@ -166,6 +167,24 @@ function handleGetProducts(token) {
   requireAuth(token);
   const products = getSheetData('Products');
   return { success: true, products: products };
+}
+
+/* Hapus produk (admin) — riwayat penjualan & log stok lama tetap tersimpan */
+function handleDeleteProduct(payload, token) {
+  requireAdmin(token);
+  const productID = String(payload.productID || '').trim();
+  if (!productID) throw new Error('ProductID wajib.');
+  const ss    = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const sheet = ss.getSheetByName('Products');
+  const rows  = sheet.getDataRange().getValues();
+  const idx   = rows[0].indexOf('ProductID');
+  for (let i = 1; i < rows.length; i++) {
+    if (String(rows[i][idx]).trim() === productID) {
+      sheet.deleteRow(i + 1);
+      return { success: true, message: 'Produk dihapus.' };
+    }
+  }
+  throw new Error('Produk tidak ditemukan di katalog.');
 }
 
 function handleSaveProduct(payload, token) {
