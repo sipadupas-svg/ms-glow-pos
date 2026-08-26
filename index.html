@@ -642,7 +642,7 @@
           html5Scanner.start(
             {facingMode:'environment'},
             {fps:10, qrbox:{width:250,height:160}},
-            text=>{ closeScanner(); if(scannerCallback)scannerCallback(text); },
+            text=>{ closeScanner(); if(scannerCallback)scannerCallback(String(text).trim()); },
             ()=>{}
           ).catch(err=>{
             console.error('camera error:',err);
@@ -659,9 +659,14 @@
     document.getElementById('btn-scan').onclick=()=>document.getElementById('btn-scanner-open').click();
     document.getElementById('btn-scanner-open').onclick=()=>{
       openScanner(code=>{
-        const p=state.products.find(x=>String(x.Barcode)===code);
-        if(p){addToCart(p.ProductID);showToast('Ditemukan: '+p.Name);}
-        else{document.getElementById('pos-search').value=code;renderProductList(code);showToast('Barcode: '+code);}
+        const p=state.products.find(x=>String(x.Barcode)===code)
+              ||state.products.find(x=>String(x.SKU||'').trim()===code);
+        if(p){addToCart(p.ProductID);showToast('Ditemukan: '+p.Name+' ✓');}
+        else{
+          document.getElementById('pos-search').value=code;
+          renderProductList(code);
+          showToast('Barcode: '+code+' — barang tidak ditemukan');
+        }
       });
     };
     document.getElementById('scanner-close').onclick=closeScanner;
@@ -723,6 +728,9 @@
     /* ===== PRODUCTS MANAGEMENT ===== */
     document.getElementById('btn-add-product').onclick=()=>{
       const sel=document.getElementById('prod-tbody');
+      // tutup baris form lain yang masih terbuka supaya tidak dobel
+      const openForm=document.getElementById('np-name')||document.getElementById('ep-name');
+      if(openForm&&openForm.closest('tr'))openForm.closest('tr').remove();
       let row=document.createElement('tr');
       row.innerHTML='<td><input id="np-name" class="form-input" style="padding:4px;font-size:12px;width:100%" placeholder="Nama barang"></td>'
         +'<td><input id="np-sku" class="form-input" style="padding:4px;font-size:12px;width:70px" placeholder="SKU"></td>'
@@ -805,25 +813,43 @@
       }catch(e){showToast('Gagal memuat rekap');console.error(e);}
     }
     
-    /* ===== EDIT PRODUCT ===== */
-    async function editProduct(productID){
+    /* ===== EDIT PRODUCT (inline di tabel + scan kamera) ===== */
+    function escAttr(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');}
+    function editProduct(productID){
       const p=state.products.find(x=>String(x.ProductID)===productID);
-      if(!p) return;
-      const name=await promptAsync('Nama barang',p.Name);
-      if(name===null) return;
-      const sku=await promptAsync('SKU',p.SKU||'');
-      if(sku===null) return;
-      const barcode=await promptAsync('Barcode',p.Barcode||'');
-      const priceStr=await promptAsync('Harga',String(p.Price||0));
-      const price=Number(priceStr)||0;
-      const minStr=await promptAsync('Stok Min',String(p.StockMin||0));
-      const min=Number(minStr)||0;
+      if(!p){showToast('Barang tidak ditemukan.');return;}
+      const openForm=document.getElementById('np-name')||document.getElementById('ep-name');
+      if(openForm&&openForm.closest('tr'))openForm.closest('tr').remove();
+      const tb=document.getElementById('prod-tbody');
+      const row=document.createElement('tr');
+      row.innerHTML='<td><input id="ep-name" class="form-input" style="padding:4px;font-size:12px;width:100%" value="'+escAttr(p.Name)+'"></td>'
+        +'<td><input id="ep-sku" class="form-input" style="padding:4px;font-size:12px;width:70px" value="'+escAttr(p.SKU)+'"></td>'
+        +'<td><div style="display:flex;gap:4;align-items:center;"><input id="ep-barcode" class="form-input" style="padding:4px;font-size:12px;width:80px" value="'+escAttr(p.Barcode)+'"><button onclick="scanEditProduct()" class="btn btn-sm btn-pink" style="font-size:11px;padding:5px 7px;" title="Scan kamera">📷</button></div></td>'
+        +'<td><input id="ep-price" type="number" inputmode="numeric" class="form-input" style="padding:4px;font-size:12px;width:80px" value="'+Number(p.Price||0)+'"></td>'
+        +'<td><input id="ep-min" type="number" inputmode="numeric" class="form-input" style="padding:4px;font-size:12px;width:50px" value="'+Number(p.StockMin||0)+'"></td>'
+        +'<td><button onclick="saveEditProduct(\''+productID+'\')" class="btn btn-sm btn-pink" style="font-size:10px;">Save</button></td>';
+      tb.prepend(row);
+      document.getElementById('ep-name').focus();
+    }
+    function scanEditProduct(){
+      openScanner(code=>{
+        const el=document.getElementById('ep-barcode');
+        if(el){el.value=code;showToast('Barcode terbaca: '+code);}
+      });
+    }
+    async function saveEditProduct(productID){
+      const name=(document.getElementById('ep-name')||{}).value||'';
+      const sku=(document.getElementById('ep-sku')||{}).value||'';
+      const barcode=(document.getElementById('ep-barcode')||{}).value||'';
+      const price=Number((document.getElementById('ep-price')||{}).value)||0;
+      const min=Number((document.getElementById('ep-min')||{}).value)||0;
+      if(!name){showToast('Nama barang wajib!');return;}
       try{
-        await apiCall('save-product',{productID:productID,sku:sku,name:name,barcode:barcode,price:price,category:p.Category||'',stockMin:min},state.token);
-        showToast('Produk diperbarui');
-        state.products=state.products.map(x=>x.ProductID===productID?{...x,SKU:sku,Name:name,Barcode:barcode,Price:price,StockMin:min}:x);
+        await apiCall('save-product',{productID:productID,sku:sku,name:name,barcode:barcode,price:price,category:'',stockMin:min},state.token);
+        showToast('Perubahan tersimpan ✓');
+        try{const pd=await apiCall('get-products',{},state.token);state.products=pd.products||[];}catch(e){}
         loadProducts();
-      }catch(e){showToast(e.message||'Gagal update');console.error(e);}
+      }catch(e){showToast(e.message||'Gagal memperbarui');}
     }
     async function saveProduct(){
       const name=(document.getElementById('np-name')||{}).value||'';
@@ -839,10 +865,6 @@
         loadProducts();
       }catch(e){showToast(e.message||'Gagal simpan');}
     }
-    function promptAsync(message,defVal){
-      return new Promise(resolve=>{ const r=prompt(message,defVal); resolve(r); });
-    }
-
     /* ===== SETTINGS ===== */
     document.getElementById('btn-change-pin').onclick=async()=>{
             const oldPin=document.getElementById('set-old-pin').value;

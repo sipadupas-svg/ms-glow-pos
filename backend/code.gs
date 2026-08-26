@@ -170,29 +170,42 @@ function handleGetProducts(token) {
 
 function handleSaveProduct(payload, token) {
   requireAdmin(token);
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const ss    = SpreadsheetApp.openById(SPREADSHEET_ID);
   const sheet = ss.getSheetByName('Products');
-  const productID = payload.productID || ('P-' + Date.now());
-  const sku       = String(payload.sku || '').trim();
-  const name      = String(payload.name || '').trim();
-  const barcode   = String(payload.barcode || '').trim();
-  const price     = Number(payload.price || 0);
-  const category  = String(payload.category || '').trim();
-  const stockMin  = Number(payload.stockMin || 0);
+
+  const incomingID = String(payload.productID || '').trim();
+  const productID  = incomingID || ('P-' + Date.now());
+  const isUpdate   = !!incomingID;
+  const sku        = String(payload.sku || '').trim();
+  const name       = String(payload.name || '').trim();
+  const barcode    = String(payload.barcode || '').trim();
+  const price      = Number(payload.price || 0);
+  const category   = String(payload.category || '').trim();
+  const stockMin   = Number(payload.stockMin || 0);
   if (!name) throw new Error('Nama barang wajib diisi.');
 
-  const existing = getSheetData('Products');
-  const found = existing.find(p => String(p.ProductID) === String(productID) && productID !== ('P-' + Date.now()) || String(p.SKU) === sku);
-  if (found) {
-    found.SKU = sku; found.Name = name; found.Barcode = barcode;
-    found.Price = price; found.Category = category; found.StockMin = stockMin;
-    updateRowByPrimaryKey('Products', 'ProductID', productID, found);
-  } else {
-    const headers = ['ProductID','SKU','Name','Barcode','Price','Category','StockMin','CreatedAt'];
-    if (!sheet.getLastRow()) sheet.getRange(1,1,1,headers.length).setValues([headers]);
-    sheet.appendRow([productID, sku, name, barcode, price, category, stockMin, new Date()]);
+  const headers = ['ProductID','SKU','Name','Barcode','Price','Category','StockMin','CreatedAt'];
+  if (!sheet.getLastRow()) {
+    sheet.getRange(1,1,1,headers.length).setValues([headers]);
   }
-  return { success: true, message: 'Produk disimpan.', productID: productID };
+
+  const existing = getSheetData('Products');
+  const rowIndex = existing.findIndex(p => String(p.ProductID).trim() === productID);
+
+  /* UPDATE — hanya jika client mengirim productID yang benar-benar ada */
+  if (isUpdate && rowIndex >= 0) {
+    const excelRow = rowIndex + 2; // +1 header, +1 index mulai 0
+    sheet.getRange(excelRow, 2, 1, 6).setValues([[sku, name, barcode, price, category, stockMin]]);
+    return { success: true, message: 'Produk diperbarui.', productID: productID };
+  }
+
+  /* TAMBAH BARU — cegah barcode ganda supaya tidak saling menimpa */
+  if (barcode) {
+    const dup = existing.find(p => String(p.Barcode).trim() === barcode);
+    if (dup) throw new Error('Barcode sudah dipakai oleh: ' + (dup.Name || '-'));
+  }
+  sheet.appendRow([productID, sku, name, barcode, price, category, stockMin, new Date()]);
+  return { success: true, message: 'Produk ditambahkan.', productID: productID };
 }
 
 /* ==================== STOK GUDANG ==================== */
