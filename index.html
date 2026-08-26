@@ -743,8 +743,14 @@
     };
     function scanNewProduct(){
       openScanner(code=>{
-        const el=document.getElementById('np-barcode');
-        if(el){el.value=code;showToast('Barcode terbaca: '+code);}
+        const bc=document.getElementById('np-barcode');
+        const sku=document.getElementById('np-sku');
+        if(bc)bc.value=code;
+        let msg='Barcode terbaca: '+code;
+        if(sku){
+          if(!sku.value.trim()){ sku.value=code; msg+=' · SKU otomatis'; }
+        }
+        showToast(msg);
       });
     }
     document.getElementById('prod-search').addEventListener('input',loadProducts);
@@ -833,8 +839,14 @@
     }
     function scanEditProduct(){
       openScanner(code=>{
-        const el=document.getElementById('ep-barcode');
-        if(el){el.value=code;showToast('Barcode terbaca: '+code);}
+        const bc=document.getElementById('ep-barcode');
+        const sku=document.getElementById('ep-sku');
+        if(bc)bc.value=code;
+        let msg='Barcode terbaca: '+code;
+        if(sku){
+          if(!sku.value.trim()){ sku.value=code; msg+=' · SKU otomatis'; }
+        }
+        showToast(msg);
       });
     }
     async function saveEditProduct(productID){
