@@ -99,7 +99,7 @@ function requireAuth(token) {
   const t = decodeToken(token);
   if (!t) throw new Error('Sesi tidak valid atau sudah berakhir.');
   const users = getSheetData('Users');
-  const u = users.find(x => String(x.Username) === String(t.u));
+  const u = users.find(x => String(x.Username).trim().toLowerCase() === String(t.u).trim().toLowerCase());
   if (!u) throw new Error('User tidak ditemukan.');
   return { username: u.Username, role: u.Role, shift: t.s || '', raw: t };
 }
@@ -118,7 +118,7 @@ function makeToken(username, shift) {
 /* ==================== LOGIN ==================== */
 
 function handleLogin(payload) {
-  const username = String(payload.username || '').trim();
+  const username = String(payload.username || '').trim().toLowerCase();
   const pin      = String(payload.pin || '').trim();
 
   const cache = CacheService.getScriptCache();
@@ -128,7 +128,7 @@ function handleLogin(payload) {
   }
 
   const users = getSheetData('Users');
-  const user  = users.find(x => String(x.Username) === username && String(x.PIN) === pin);
+  const user  = users.find(x => String(x.Username).trim().toLowerCase() === username && String(x.PIN).trim() === pin);
 
   if (!user) {
     let fails = 0;
