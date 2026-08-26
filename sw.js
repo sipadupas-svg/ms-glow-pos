@@ -1,7 +1,7 @@
 /* ===== Service Worker — Ms Glow POS ===== */
 /* Cache HTML, CSS, JS, manifest + icon; network-first untuk API */
 
-const CACHE_NAME = 'ms-glow-pos-v5';
+const CACHE_NAME = 'ms-glow-pos-v6';
 const OFFLINE_URL = '/index.html';
 const ASSETS = [
   '/',
@@ -10,7 +10,7 @@ const ASSETS = [
   '/icons/icon-192.png',
   '/icons/icon-512.png',
   'https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js',
-  'https://cdn.jsdelivr.net/npm/@zxing/browser@1.0.0-rc.10/dist/index.min.js'
+    'https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js'
 ];
 
 /* Install — cache semua aset statis */

@@ -90,6 +90,26 @@
     .lg-btn{background:linear-gradient(135deg,var(--pink-med),var(--pink-deep));box-shadow:0 10px 24px rgba(231,84,128,.35);font-size:16px;padding:14px;margin-top:4px}
     .lg-btn:active{transform:scale(.97)}
     .lg-foot{margin-top:16px;text-align:center;font-size:11px;color:var(--gray-700);opacity:.55}
+
+    /* ===== DASHBOARD & KOMPONEN ===== */
+    .hero-card{background:linear-gradient(135deg,var(--pink-med),var(--pink-deep));border-radius:18px;padding:20px;color:#fff;margin-bottom:12px;box-shadow:0 12px 28px rgba(231,84,128,.35)}
+    .hc-label{font-size:12px;font-weight:600;opacity:.92}
+    .hc-value{font-size:32px;font-weight:800;margin:4px 0;letter-spacing:.3px}
+    .hc-sub{font-size:12px;opacity:.88}
+    .qa-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    .qa-btn{background:#fff;border:2px solid var(--pink-soft);border-radius:14px;padding:12px 6px;font-size:12px;font-weight:700;color:var(--gray-800);cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px;transition:all .15s}
+    .qa-btn i{font-style:normal;font-size:22px}
+    .qa-btn:hover,.qa-btn:active{background:#fff0f4;border-color:var(--pink-med);transform:translateY(-1px)}
+    .stat-card{display:flex;align-items:center;gap:10;padding:14px}
+    .sc-icon{width:40px;height:40px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px;background:#ffe4ec;flex:none}
+    .sc-icon.orange{background:#ffedd5}
+    .sc-label{font-size:11px;color:var(--gray-700)}
+    .sc-value{font-size:15px;font-weight:800;color:var(--gray-800)}
+    .low-list div{padding:7px 2px;border-bottom:1px dashed var(--gray-200);display:flex;justify-content:space-between;gap:8}
+    .low-list div:last-child{border-bottom:none}
+    .table-wrap{overflow-x:auto;border-radius:12px;border:1px solid var(--gray-200);background:#fff}
+    .table-wrap table{min-width:430px;margin:0}
+    #scanner-reader video{width:100% !important;border-radius:16px}
 </style>
 </head>
 <body>
@@ -124,23 +144,38 @@
     <!-- DASHBOARD -->
 
     <div id="view-dashboard" class="view">
-      <header class="app-header"><h1>Ms Glow POS</h1>
-        <div class="subtitle" id="dash-subtitle">Dashboard</div>
+      <header class="app-header"><h1>Halo, <span id="dash-user">admin</span> 👋</h1>
+        <div class="subtitle" id="dash-subtitle">Ringkasan penjualan hari ini</div>
         <div class="header-actions"><span class="shift-badge" id="dash-shift">Pagi</span></div>
       </header>
-      <div class="card" style="text-align:center;background:var(--pink-soft);">
-        <div style="font-size:12px;font-weight:600;color:var(--pink-deep);">Penjualan Hari Ini</div>
-        <div id="dash-total-today" style="font-size:28px;font-weight:700;color:var(--pink-deep);">Rp 0</div>
+
+      <div class="hero-card">
+        <div class="hc-label">💰 Penjualan Hari Ini</div>
+        <div class="hc-value" id="dash-total-today">Rp 0</div>
+        <div class="hc-sub"><span id="dash-trx">0</span> transaksi · <span id="dash-qty">0</span> pcs terjual</div>
       </div>
+
+      <div class="card" style="padding:14px;">
+        <div style="font-size:13px;font-weight:700;margin-bottom:10;color:var(--pink-deep);">⚡ Aksi Cepat</div>
+        <div class="qa-grid">
+          <button class="qa-btn" onclick="showView('pos')"><i>🛒</i>Mulai Jualan</button>
+          <button class="qa-btn" onclick="showView('products')"><i>🏷️</i>Tambah Barang</button>
+          <button class="qa-btn" onclick="showView('warehouse')"><i>📦</i>Stok Gudang</button>
+          <button class="qa-btn" onclick="showView('report')"><i>📊</i>Lihat Rekap</button>
+        </div>
+      </div>
+
       <div class="grid grid-2">
-        <div class="card" style="text-align:center;"><div style="font-size:11px;color:var(--gray-700);">Transaksi</div><div id="dash-trx" style="font-size:20px;font-weight:700;">0</div></div>
-        <div class="card" style="text-align:center;"><div style="font-size:11px;color:var(--gray-700);">Qty Terjual</div><div id="dash-qty" style="font-size:20px;font-weight:700;">0</div></div>
-        <div class="card" style="text-align:center;"><div style="font-size:11px;color:var(--gray-700);">Shift Pagi</div><div id="dash-shift-pagi" style="font-size:18px;font-weight:700;color:var(--pink-deep);">Rp 0</div></div>
-        <div class="card" style="text-align:center;"><div style="font-size:11px;color:var(--gray-700);">Shift Siang</div><div id="dash-shift-siang" style="font-size:18px;font-weight:700;color:var(--pink-deep);">Rp 0</div></div>
+        <div class="card stat-card"><div class="sc-icon">🌅</div><div><div class="sc-label">Shift Pagi</div><div class="sc-value" id="dash-shift-pagi">Rp 0</div></div></div>
+        <div class="card stat-card"><div class="sc-icon orange">☀️</div><div><div class="sc-label">Shift Siang</div><div class="sc-value" id="dash-shift-siang">Rp 0</div></div></div>
       </div>
+
       <div class="card">
-        <div style="font-size:13px;font-weight:600;margin-bottom:8;color:var(--pink-deep);">⚠️ Stok Minimum</div>
-              <div id="dash-low-list" style="font-size:12px;color:var(--gray-700);">Tidak ada stok rendah.</div>
+        <div style="display:flex;align-items:center;gap:6;margin-bottom:8;">
+          <span style="font-size:16px;">⚠️</span>
+          <div style="font-size:13px;font-weight:700;">Stok Di Bawah Minimum</div>
+        </div>
+        <div id="dash-low-list" class="low-list">Tidak ada stok rendah 🎉</div>
       </div>
     </div>
 
@@ -191,9 +226,9 @@
     
     <!-- SCANNER OVERLAY -->
     <div id="scanner-overlay">
-      <video id="scanner-video" style="width:100vw;height:100vh;object-fit:cover;"></video>
+      <div id="scanner-reader" style="width:92vw;max-width:430px;border-radius:16px;overflow:hidden;"></div>
       <div class="close-btn" id="scanner-close">✕</div>
-      <div style="position:absolute;bottom:80px;left:50%;transform:translateX(-50%);color:#fff;font-size:14px;text-align:center;">Arahkan ke barcode</div>
+      <div style="position:absolute;bottom:80px;left:50%;transform:translateX(-50%);color:#fff;font-size:14px;text-align:center;z-index:2;background:rgba(0,0,0,.45);padding:6px 14px;border-radius:20px;">Arahkan barcode / QR ke kamera</div>
     </div>
 
     <!-- SALES HISTORY -->
@@ -220,10 +255,12 @@
       </header>
       <div class="card">
         <input id="wh-search" class="form-input" type="text" placeholder="Cari barang..." style="margin-bottom:8px;">
+        <div class="table-wrap">
         <table>
           <thead><tr><th>Nama Barang</th><th class="center">IN</th><th class="center">OUT</th><th class="center">TOTAL</th></tr></thead>
           <tbody id="wh-tbody"><tr><td colspan="6" class="loading">Memuat...</td></tr></tbody>
         </table>
+        </div>
       </div>
     </div>
 
@@ -234,10 +271,12 @@
       </header>
       <div class="card">
         <input id="gl-search" class="form-input" type="text" placeholder="Cari barang..." style="margin-bottom:8px;">
+        <div class="table-wrap">
         <table>
           <thead><tr><th>Nama Barang</th><th class="center">IN</th><th class="center">OUT</th><th class="center">TOTAL</th></tr></thead>
           <tbody id="gl-tbody"><tr><td colspan="6" class="loading">Memuat...</td></tr></tbody>
         </table>
+        </div>
       </div>
     </div>
 
@@ -272,10 +311,12 @@
       </header>
       <div class="card">
         <input id="prod-search" class="form-input" type="text" placeholder="Cari..." style="margin-bottom:8px;">
+        <div class="table-wrap">
         <table>
           <thead><tr><th>Nama</th><th>SKU</th><th>Barcode</th><th>Harga</th><th>Min</th></tr></thead>
           <tbody id="prod-tbody"><tr><td colspan="5" class="loading">Memuat...</td></tr></tbody>
         </table>
+        </div>
       </div>
     </div>
 
@@ -353,7 +394,7 @@
     <div id="toast"></div>
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@zxing/browser@1.0.0-rc.10/dist/index.min.js"></script>
+  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
   <script>
     /* ===== CONFIG ===== */
             let CONFIG = window.APP_CONFIG || { SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbwEAY5yI5t-6K9TXChNnWAKCB5YY_7KBioz-x367xJAZvt7oPavfpjQAjYTEoavRMUx/exec' };
@@ -484,7 +525,7 @@
           document.getElementById('dash-shift-siang').textContent = fmtCurrency(data.shiftSummary.siang);
           const lowList = document.getElementById('dash-low-list');
           if(data.belowMin.length===0){ lowList.textContent='Tidak ada stok rendah.'; }
-                      else { lowList.innerHTML = data.belowMin.slice(0,5).map(p=>'<div style="margin-bottom:4px;">'+p.Name+' (stok:'+p.TOTAL_STOK+', min:'+p.StockMin+')</div>').join(''); }
+                      else { lowList.innerHTML = data.belowMin.slice(0,8).map(p=>'<div><span>'+p.Name+'</span><span style="color:var(--red);font-weight:700;white-space:nowrap;">'+p.TOTAL_STOK+' / min '+p.StockMin+'</span></div>').join(''); }
         }
       } catch(e){ showToast('Gagal memuat dashboard'); console.error(e); }
     }
@@ -579,28 +620,41 @@
       document.getElementById('btn-close-receipt').onclick=()=>document.getElementById('receipt-modal').style.display='none';
     }
 
-    /* ===== BARCODE SCANNER (reusable) ===== */
-    let scanner=null, scannerCallback=null;
+    /* ===== BARCODE SCANNER (html5-qrcode) ===== */
+    let html5Scanner=null, scannerCallback=null;
     function closeScanner(){
-      if(scanner){try{scanner.reset();}catch(e){} scanner=null;}
+      if(html5Scanner){
+        try{
+          html5Scanner.stop().then(()=>{try{html5Scanner.clear();}catch(e){}}).catch(()=>{});
+        }catch(e){}
+        html5Scanner=null;
+      }
       document.getElementById('scanner-overlay').style.display='none';
     }
     function openScanner(cb){
       scannerCallback=cb;
+      if(!window.Html5Qrcode){ showToast('Pemindai belum termuat, coba lagi.'); return; }
       const overlay=document.getElementById('scanner-overlay');
       overlay.style.display='block';
-      if(window.ZXing&&ZXing.BrowserQRCodeReader){
+      setTimeout(()=>{
         try{
-          scanner=new ZXing.BrowserQRCodeReader();
-          scanner.decodeFromVideoDevice(undefined,document.getElementById('scanner-video'),(result,err)=>{
-            if(result){
-              const code=result.getText();
-              closeScanner();
-              if(scannerCallback)scannerCallback(code);
-            }
+          html5Scanner=new Html5Qrcode('scanner-reader');
+          html5Scanner.start(
+            {facingMode:'environment'},
+            {fps:10, qrbox:{width:250,height:160}},
+            text=>{ closeScanner(); if(scannerCallback)scannerCallback(text); },
+            ()=>{}
+          ).catch(err=>{
+            console.error('camera error:',err);
+            closeScanner();
+            showToast('Kamera tidak bisa diakses. Izinkan kamera di browser!');
           });
-        }catch(e){closeScanner();showToast('Kamera tidak tersedia.');}
-      } else {closeScanner();showToast('Scanner belum siap, coba lagi.');}
+        }catch(e){
+          console.error(e);
+          closeScanner();
+          showToast('Kamera gagal dibuka.');
+        }
+      },150);
     }
     document.getElementById('btn-scan').onclick=()=>document.getElementById('btn-scanner-open').click();
     document.getElementById('btn-scanner-open').onclick=()=>{
@@ -810,6 +864,8 @@
     function enterApp(){
       document.getElementById('screen-login').style.display='none';
       document.getElementById('app').hidden=false;
+      const du=document.getElementById('dash-user');
+      if(du)du.textContent=state.username||'admin';
       showView('dashboard');
       loadDashboard();
     }
