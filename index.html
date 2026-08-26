@@ -71,35 +71,58 @@
     #toast.show{opacity:1}
     #scanner-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.7);z-index:9999;display:none}
     #scanner-overlay video{width:100vw;height:100vh;object-fit:cover}
-    #scanner-overlay .close-btn{position:absolute;top:40px;right:20px;color:var(--white);font-size:28px;cursor:pointer}
-  </style>
+        #scanner-overlay .close-btn{position:absolute;top:40px;right:20px;color:var(--white);font-size:28px;cursor:pointer}
+
+    /* ===== HALAMAN LOGIN (layar tersendiri) ===== */
+    #screen-login{min-height:100vh;background:linear-gradient(160deg,#ffe4ec 0%,#ffd1dc 45%,#ffb0c4 100%);display:flex;align-items:center;justify-content:center;padding:24px;position:relative;overflow:hidden}
+    .lg-blob{position:absolute;border-radius:50%;filter:blur(46px);opacity:.55;pointer-events:none}
+    .lg-blob-1{width:280px;height:280px;background:#ff9aa2;top:-70px;right:-70px}
+    .lg-blob-2{width:240px;height:240px;background:#fff;bottom:-60px;left:-60px;opacity:.35}
+    .login-card{position:relative;width:100%;max-width:360px;background:rgba(255,255,255,.94);backdrop-filter:blur(10px);border-radius:26px;padding:32px 26px 24px;box-shadow:0 24px 60px rgba(231,84,128,.28);border:1px solid rgba(255,255,255,.75)}
+    .lg-logo{width:76px;height:76px;margin:0 auto 14px;border-radius:24px;background:linear-gradient(135deg,var(--pink-med),var(--pink-deep));display:flex;align-items:center;justify-content:center;font-size:36px;box-shadow:0 12px 26px rgba(231,84,128,.38)}
+    .lg-title{text-align:center;font-size:27px;font-weight:800;color:var(--gray-800);letter-spacing:.3px}
+    .lg-title span{color:var(--pink-deep)}
+    .lg-sub{text-align:center;font-size:13px;color:var(--gray-700);margin:4px 0 22px}
+    .shift-toggle{display:flex;gap:10px}
+    .shift-opt{flex:1;border:2px solid var(--pink-soft);background:#fff;border-radius:14px;padding:10px 6px 8px;font-size:13px;font-weight:700;color:var(--gray-700);cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;transition:all .15s}
+    .shift-opt small{font-size:10px;font-weight:500;opacity:.6}
+    .shift-opt.active{border-color:var(--pink-deep);background:linear-gradient(135deg,#fff0f4,#ffe0ea);color:var(--pink-deep);box-shadow:0 6px 16px rgba(231,84,128,.18)}
+    .lg-btn{background:linear-gradient(135deg,var(--pink-med),var(--pink-deep));box-shadow:0 10px 24px rgba(231,84,128,.35);font-size:16px;padding:14px;margin-top:4px}
+    .lg-btn:active{transform:scale(.97)}
+    .lg-foot{margin-top:16px;text-align:center;font-size:11px;color:var(--gray-700);opacity:.55}
+</style>
 </head>
 <body>
-  <div id="app">
-    <!-- LOGIN -->
-    <div id="view-login" class="view active" style="height:100vh;display:flex;align-items:center;justify-content:center;">
-      <div style="width:100%;max-width:320px;padding:0 20px;">
-        <div style="text-align:center;margin-bottom:32px;">
-          <div style="width:80px;height:80px;background:var(--pink-deep);border-radius:50%;margin:0 auto 16px;display:flex;align-items:center;justify-content:center;">
-            <span style="color:#fff;font-size:32px;">🌸</span>
-          </div>
-          <h1 style="font-size:24px;color:var(--pink-deep);font-weight:700;">Ms Glow POS</h1>
-          <p style="font-size:13px;color:var(--gray-700);margin-top:6px;">Penjualan & Pendataan Stok</p>
+  <!-- ====== HALAMAN LOGIN (layar tersendiri, tampil sebelum masuk) ====== -->
+  <section id="screen-login">
+    <div class="lg-blob lg-blob-1"></div>
+    <div class="lg-blob lg-blob-2"></div>
+    <div class="login-card">
+      <div class="lg-logo">🌸</div>
+      <h1 class="lg-title">Ms Glow <span>POS</span></h1>
+      <p class="lg-sub">Penjualan & Pendataan Stok</p>
+
+      <div class="form-group"><div class="form-label">Username</div>
+        <input id="login-username" class="form-input" type="text" placeholder="Masukkan username" autocomplete="username"></div>
+      <div class="form-group"><div class="form-label">PIN</div>
+        <input id="login-pin" class="form-input" type="password" placeholder="Masukkan PIN" inputmode="numeric"></div>
+
+      <div class="form-group"><div class="form-label">Pilih Shift Kerja</div>
+        <div class="shift-toggle">
+          <button id="shift-pagi" type="button" class="shift-opt active">🌅 Pagi<small>06:00 – 14:00</small></button>
+          <button id="shift-siang" type="button" class="shift-opt">☀️ Siang<small>14:00 – 22:00</small></button>
         </div>
-        <div class="form-group"><div class="form-label">Username</div>
-          <input id="login-username" class="form-input" type="text" placeholder="Masukkan username" autocomplete="username"></div>
-        <div class="form-group"><div class="form-label">PIN</div>
-          <input id="login-pin" class="form-input" type="password" placeholder="Masukkan PIN" inputmode="numeric"></div>
-        <div class="form-group"><div class="form-label">Shift</div>
-          <div class="grid-2">
-            <button id="shift-pagi" class="btn btn-pink">Pagi</button>
-            <button id="shift-siang" class="btn btn-gray">Siang</button>
-          </div>
-        </div>
-        <button id="btn-login" class="btn btn-block btn-pink">Login</button>
       </div>
+
+      <button id="btn-login" class="btn btn-block lg-btn">Masuk</button>
+      <p class="lg-foot">Ms Glow POS v1.0 · Data tersimpan aman di Google Sheets</p>
     </div>
+  </section>
+
+  <!-- ====== APLIKASI UTAMA (baru tampil setelah login) ====== -->
+  <div id="app" hidden>
     <!-- DASHBOARD -->
+
     <div id="view-dashboard" class="view">
       <header class="app-header"><h1>Ms Glow POS</h1>
         <div class="subtitle" id="dash-subtitle">Dashboard</div>
@@ -412,16 +435,14 @@
       if(a && a.token){ state.token=a.token; state.username=a.username; state.role=a.role||'admin'; state.shift=a.shift||'pagi'; return true; }
       return false;
     }
-    document.getElementById('shift-pagi').addEventListener('click', function(){
-      document.getElementById('shift-pagi').classList.add('btn-pink'); document.getElementById('shift-pagi').classList.remove('btn-gray');
-      document.getElementById('shift-siang').classList.remove('btn-pink'); document.getElementById('shift-siang').classList.add('btn-gray');
-      state.shift='pagi';
-    });
-    document.getElementById('shift-siang').addEventListener('click', function(){
-      document.getElementById('shift-siang').classList.add('btn-pink'); document.getElementById('shift-siang').classList.remove('btn-gray');
-      document.getElementById('shift-pagi').classList.remove('btn-pink'); document.getElementById('shift-pagi').classList.add('btn-gray');
-      state.shift='siang';
-    });
+        function setShift(s){
+      state.shift=s;
+      const p=document.getElementById('shift-pagi'), si=document.getElementById('shift-siang');
+      p.classList.toggle('active', s==='pagi');
+      si.classList.toggle('active', s==='siang');
+    }
+    document.getElementById('shift-pagi').addEventListener('click', ()=>setShift('pagi'));
+    document.getElementById('shift-siang').addEventListener('click', ()=>setShift('siang'));
     document.getElementById('btn-login').addEventListener('click', doLogin);
     document.getElementById('login-pin').addEventListener('keypress', e=>{ if(e.key==='Enter') doLogin(); });
     document.getElementById('login-username').addEventListener('keypress', e=>{ if(e.key==='Enter'){ document.getElementById('login-pin').focus(); } });
@@ -436,9 +457,8 @@
           saveAuth(data.token, data.username, data.role, data.shift);
           state.token=data.token; state.username=data.username; state.role=data.role; state.shift=data.shift;
           // load products for POS
-          try { const pd = await apiCall('get-products', {}, state.token); state.products = pd.products||[]; } catch(e){ console.warn('gagal load produk (offline?)'); }
-          showView('dashboard');
-          loadDashboard();
+                    try { const pd = await apiCall('get-products', {}, state.token); state.products = pd.products||[]; } catch(e){ console.warn('gagal load produk (offline?)'); }
+          enterApp();
           flushOfflineQueue();
         }
       } catch(err){ showToast(err.message || 'Login gagal!'); }
@@ -734,21 +754,31 @@
       if(!oldPin||!newPin){showToast('PIN lama & baru wajib!');return;}
       try{const data=await apiCall('change-pin',{oldPin:oldPin,newPin:newPin},state.token);if(data.success){showToast(data.message);document.getElementById('set-old-pin').value='';document.getElementById('set-new-pin').value='';}}catch(e){showToast(e.message||'Gagal ganti PIN');}
     };
-    document.getElementById('btn-logout').onclick=()=>{ clearAuth(); showView('login-init'); };
+    document.getElementById('btn-logout').onclick=()=>{ clearAuth(); state.token=null; state.products=[]; state.cart=[]; showLoginScreen(); };
     function initSettings(){
       document.getElementById('settings-user-info').innerHTML='<div style="font-weight:600;">'+state.username+'</div><div style="font-size:12px;color:var(--gray-700);">Role: '+(state.role||'operator')+'</div>';
     }
 
+        /* ===== SCREEN SWITCHING (login vs aplikasi) ===== */
+    function showLoginScreen(){
+      document.getElementById('screen-login').style.display='flex';
+      document.getElementById('app').hidden=true;
+    }
+    function enterApp(){
+      document.getElementById('screen-login').style.display='none';
+      document.getElementById('app').hidden=false;
+      showView('dashboard');
+      loadDashboard();
+    }
+
     /* ===== INIT ===== */
     async function init(){
-      // check session
       if(initLogin()){
-        showView('dashboard');
-        loadDashboard();
         try{const data=await apiCall('get-products',{},state.token);state.products=data.products||[];}catch(e){console.warn('offline or no products');}
+        enterApp();
         flushOfflineQueue();
       } else {
-        showView('login-init');
+        showLoginScreen();
       }
     }
         function showView(name){
@@ -771,8 +801,7 @@
       item.addEventListener('click',function(){showView(this.getAttribute('data-nav'));});
     });
     // also allow login-init
-    document.getElementById('view-login').id='view-login';
-    window.showView=showView;
+        window.showView=showView;
     document.addEventListener('DOMContentLoaded',init);
         // Enter key anywhere on body triggers checkout if on POS
     document.addEventListener('keydown',e=>{
