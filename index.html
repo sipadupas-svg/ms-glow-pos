@@ -235,6 +235,7 @@
         <input id="scanner-manual" type="text" inputmode="numeric" placeholder="Gagal scan? Ketik barcode..." style="flex:1;padding:12px;border-radius:12px;border:none;font-size:14px;background:#fff;">
         <button id="scanner-manual-ok" class="btn btn-pink" style="padding:10px 16px;">OK</button>
       </div>
+      <button id="scanner-flip" class="btn btn-gray" style="position:absolute;bottom:100px;right:16px;z-index:2;padding:10px;border-radius:50%;box-shadow:0 2px 8px rgba(0,0,0,.3);font-size:18px;display:none;">🔄</button>
     </div>
 
     <!-- SALES HISTORY -->
@@ -637,58 +638,79 @@
       }
       document.getElementById('scanner-overlay').style.display='none';
     }
+    let html5Scanner=null, scannerCallback=null, currentFacing='environment';
     function openScanner(cb){
       scannerCallback=cb;
       if(!window.Html5Qrcode){ showToast('Pemindai belum termuat, coba lagi.'); return; }
       const overlay=document.getElementById('scanner-overlay');
       const hint=document.getElementById('scanner-hint');
+      const flipBtn=document.getElementById('scanner-flip');
       const manual=document.getElementById('scanner-manual');
       if(manual)manual.value='';
       overlay.style.display='block';
       if(hint)hint.textContent='Mengaktifkan kamera...';
-      setTimeout(()=>{
-        try{
-          html5Scanner=new Html5Qrcode('scanner-reader');
-
-          /* Format barcode ritel yang paling sering dipakai —
-             membatasi format membuat deteksi LEBIH CEPAT & AKURAT */
-          const F=window.Html5QrcodeSupportedFormats;
-          const scanFormats=(F&&F.EAN_13)?[
-            F.EAN_13,F.EAN_8,F.UPC_A,F.UPC_E,
-            F.CODE_128,F.CODE_39,F.ITF,F.CODABAR,
-            F.QR_CODE,F.DATA_MATRIX
-          ]:undefined;
-
-          html5Scanner.start(
-            {facingMode:'environment',
-             width:{ideal:1280},   /* resolusi tinggi = barcode kecil terbaca */
-             height:{ideal:720}},
-            {
-              fps:20,
-              qrbox:(vw,vh)=>{ const s=Math.floor(Math.min(vw,vh)*0.78); return {width:s,height:Math.max(130,Math.floor(s*0.62))}; },
-              aspectRatio:(window.innerWidth>window.innerHeight)?1.777:0.75,
-              formatsToSupport:scanFormats,
-              experimentalFeatures:{useBarCodeDetectorIfSupported:true}
-            },
-            text=>{
-              closeScanner();
-              if(scannerCallback)scannerCallback(String(text).trim());
-            },
-            ()=>{}
-          ).then(()=>{
-            if(hint)hint.textContent='📷 Memindai... tahan barcode tetap & dekatkan 8-12 cm';
-          }).catch(err=>{
-            console.error('camera error:',err);
-            closeScanner();
-            showToast('Kamera tidak bisa diakses. Izinkan kamera di browser!');
-          });
-        }catch(e){
-          console.error(e);
-          closeScanner();
-          showToast('Kamera gagal dibuka.');
-        }
-      },150);
+      if(flipBtn)flipBtn.style.display='none';
+      tryStartCamera();
     }
+    async function tryStartCamera(){
+      const hint=document.getElementById('scanner-hint');
+      const flipBtn=document.getElementById('scanner-flip');
+      const constraints={
+        facingMode:{ideal:currentFacing},
+        width:{ideal:1280,min:640},
+        height:{ideal:720,min:480}
+      };
+      try{
+        if(html5Scanner){ await html5Scanner.stop().catch(()=>{}); html5Scanner=null; }
+        html5Scanner=new Html5Qrcode('scanner-reader');
+        const F=window.Html5QrcodeSupportedFormats;
+        const scanFormats=(F&&F.EAN_13)?[
+          F.EAN_13,F.EAN_8,F.UPC_A,F.UPC_E,
+          F.CODE_128,F.CODE_39,F.ITF,F.CODABAR,
+          F.QR_CODE,F.DATA_MATRIX
+        ]:undefined;
+        await html5Scanner.start(
+          constraints,
+          {
+            fps:20,
+            qrbox:(vw,vh)=>{ const s=Math.floor(Math.min(vw,vh)*0.78); return {width:s,height:Math.max(130,Math.floor(s*0.62))}; },
+            aspectRatio:(window.innerWidth>window.innerHeight)?1.777:0.75,
+            formatsToSupport:scanFormats,
+            experimentalFeatures:{useBarCodeDetectorIfSupported:true}
+          },
+          text=>{ closeScanner(); if(scannerCallback)scannerCallback(String(text).trim()); },
+          ()=>{}
+        );
+        if(hint)hint.textContent='📷 Memindai... tahan barcode tetap & dekatkan 8-12 cm';
+        if(flipBtn)flipBtn.style.display='block';
+      }catch(err){
+        console.error('Camera start error:',err);
+        if(err.name==='OverconstrainedError' || err.name==='NotFoundError'){
+          if(currentFacing==='environment'){
+            currentFacing='user';
+            if(hint)hint.textContent='Kamera belakang tidak tersedia, mencoba kamera depan...';
+            setTimeout(tryStartCamera,300);
+            return;
+          }
+        }
+        closeScanner();
+        let msg='Kamera tidak bisa diakses. ';
+        if(err.name==='NotAllowedError' || err.name==='PermissionDeniedError'){
+          msg+='Izin kamera ditolak. Buka pengaturan browser → Izinkan kamera untuk situs ini, lalu refresh.';
+        }else if(err.name==='NotFoundError' || err.name==='DevicesNotFoundError'){
+          msg+='Tidak ada kamera terdeteksi di perangkat ini.';
+        }else if(err.name==='NotReadableError' || err.name==='TrackStartError'){
+          msg+='Kamera sedang dipakai aplikasi lain. Tutup aplikasi kamera lain lalu coba lagi.';
+        }else{
+          msg+='Error: '+err.message;
+        }
+        showToast(msg);
+      }
+    }
+    document.getElementById('scanner-flip').onclick=()=>{
+      currentFacing=currentFacing==='environment'?'user':'environment';
+      tryStartCamera();
+    };
     document.getElementById('scanner-manual-ok').onclick=()=>{
       const v=(document.getElementById('scanner-manual').value||'').trim();
       if(!v){showToast('Ketik kode barcode dulu');return;}
