@@ -14,7 +14,7 @@
  *  ============================================================
  */
 
-const SPREADSHEET_ID  = 'YOUR_SPREADSHEET_ID_HERE';
+const SPREADSHEET_ID  = '1LLtJDLt1HfrGQ4_p-QC3LoGw6c0JflJ0Z9ou6ipcFP0';
 const APP_NAME        = 'Ms Glow POS';
 const TOKEN_TTL_MS    = 30 * 60 * 1000;        // 30 menit
 const MAX_LOGIN_FAILS = 5;

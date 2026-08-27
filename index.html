@@ -320,7 +320,7 @@
         <input id="prod-search" class="form-input" type="text" placeholder="Cari..." style="margin-bottom:8px;">
         <div class="table-wrap">
         <table>
-          <thead><tr><th>Nama</th><th>SKU</th><th>Barcode</th><th>Harga</th><th>Min</th></tr></thead>
+          <thead><tr><th>Nama</th><th>Harga</th><th style="width:120px;">Aksi</th></tr></thead>
           <tbody id="prod-tbody"><tr><td colspan="5" class="loading">Memuat...</td></tr></tbody>
         </table>
         </div>
@@ -793,41 +793,27 @@
       const openForm=document.getElementById('np-name')||document.getElementById('ep-name');
       if(openForm&&openForm.closest('tr'))openForm.closest('tr').remove();
       let row=document.createElement('tr');
-      row.innerHTML='<td><input id="np-name" class="form-input" style="padding:4px;font-size:12px;width:100%" placeholder="Nama barang"></td>'
-        +'<td><input id="np-sku" class="form-input" style="padding:4px;font-size:12px;width:70px" placeholder="SKU"></td>'
-        +'<td><div style="display:flex;gap:4;align-items:center;"><input id="np-barcode" class="form-input" style="padding:4px;font-size:12px;width:80px" placeholder="Barcode"><button onclick="scanNewProduct()" class="btn btn-sm btn-pink" style="font-size:11px;padding:5px 7px;" title="Scan kamera">📷</button></div></td>'
-        +'<td><input id="np-price" class="form-input" type="number" inputmode="numeric" style="padding:4px;font-size:12px;width:80px" placeholder="Harga"></td>'
-        +'<td><input id="np-min" class="form-input" type="number" inputmode="numeric" style="padding:4px;font-size:12px;width:50px" placeholder="Min"></td>'
-        +'<td><button onclick="saveProduct()" class="btn btn-sm btn-pink" style="font-size:10px;">Save</button></td>';
+      row.innerHTML='<td><input id="np-name" class="form-input" style="padding:14px;font-size:16px;width:100%" placeholder="Nama barang"></td>'
+        +'<td><input id="np-price" class="form-input" type="number" inputmode="numeric" style="padding:14px;font-size:16px;width:120px" placeholder="Harga"></td>'
+        +'<td><button onclick="saveProduct()" class="btn btn-pink" style="padding:12px 24px;font-size:14px;">Simpan</button></td>';
       sel.prepend(row);
       document.getElementById('np-name').focus();
     };
-    function scanNewProduct(){
-      openScanner(code=>{
-        const bc=document.getElementById('np-barcode');
-        const sku=document.getElementById('np-sku');
-        if(bc)bc.value=code;
-        let msg='Barcode terbaca: '+code;
-        if(sku){
-          if(!sku.value.trim()){ sku.value=code; msg+=' · SKU otomatis'; }
-        }
-        showToast(msg);
-      });
-    }
+    function scanNewProduct(){showToast('Fitur barcode tidak aktif pada form ini.')}
     document.getElementById('prod-search').addEventListener('input',loadProducts);
     async function loadProducts(){
       try{
         const data=await apiCall('get-products',{},state.token);
         if(data.success){state.products=data.products||[];
           const q=document.getElementById('prod-search').value.toLowerCase();
-          const rows=state.products.filter(p=>String(p.Name).toLowerCase().includes(q)||String(p.SKU||'').toLowerCase().includes(q));
+          const rows=state.products.filter(p=>String(p.Name).toLowerCase().includes(q));
           const tb=document.getElementById('prod-tbody');
           if(state.role==='admin'){
-            tb.innerHTML=rows.length?rows.map(p=>'<tr><td>'+p.Name+'</td><td>'+(p.SKU||'')+'</td><td>'+(p.Barcode||'')+'</td><td>'+fmtCurrency(p.Price)+'</td><td>'+(p.StockMin||0)+'</td><td style="white-space:nowrap;"><button onclick="editProduct(\''+p.ProductID+'\')" class="btn btn-sm btn-gray" style="font-size:10px;">✏</button> <button onclick="deleteProduct(\''+p.ProductID+'\')" class="btn btn-sm btn-danger" style="font-size:10px;">🗑</button></td></tr>').join('')
-              :'<tr><td colspan="6" class="loading">Tidak ditemukan</td></tr>';
+            tb.innerHTML=rows.length?rows.map(p=>'<tr><td>'+p.Name+'</td><td>'+fmtCurrency(p.Price)+'</td><td style="white-space:nowrap;"><button onclick="editProduct(\''+p.ProductID+'\')" class="btn btn-sm btn-gray" style="font-size:12px;">✏</button> <button onclick="deleteProduct(\''+p.ProductID+'\')" class="btn btn-sm btn-danger" style="font-size:12px;">🗑</button></td></tr>').join('')
+              :'<tr><td colspan="3" class="loading">Tidak ditemukan</td></tr>';
           }else{
-            tb.innerHTML=rows.length?rows.map(p=>'<tr><td>'+p.Name+'</td><td>'+(p.SKU||'')+'</td><td>'+(p.Barcode||'')+'</td><td>'+fmtCurrency(p.Price)+'</td><td>'+(p.StockMin||0)+'</td></tr>').join('')
-              :'<tr><td colspan="5" class="loading">Tidak ditemukan</td></tr>';
+            tb.innerHTML=rows.length?rows.map(p=>'<tr><td>'+p.Name+'</td><td>'+fmtCurrency(p.Price)+'</td></tr>').join('')
+              :'<tr><td colspan="2" class="loading">Tidak ditemukan</td></tr>';
           }
         }
       }catch(e){showToast('Gagal memuat produk');console.error(e);}
@@ -889,36 +875,20 @@
       if(openForm&&openForm.closest('tr'))openForm.closest('tr').remove();
       const tb=document.getElementById('prod-tbody');
       const row=document.createElement('tr');
-      row.innerHTML='<td><input id="ep-name" class="form-input" style="padding:4px;font-size:12px;width:100%" value="'+escAttr(p.Name)+'"></td>'
-        +'<td><input id="ep-sku" class="form-input" style="padding:4px;font-size:12px;width:70px" value="'+escAttr(p.SKU)+'"></td>'
-        +'<td><div style="display:flex;gap:4;align-items:center;"><input id="ep-barcode" class="form-input" style="padding:4px;font-size:12px;width:80px" value="'+escAttr(p.Barcode)+'"><button onclick="scanEditProduct()" class="btn btn-sm btn-pink" style="font-size:11px;padding:5px 7px;" title="Scan kamera">📷</button></div></td>'
-        +'<td><input id="ep-price" type="number" inputmode="numeric" class="form-input" style="padding:4px;font-size:12px;width:80px" value="'+Number(p.Price||0)+'"></td>'
-        +'<td><input id="ep-min" type="number" inputmode="numeric" class="form-input" style="padding:4px;font-size:12px;width:50px" value="'+Number(p.StockMin||0)+'"></td>'
-        +'<td><button onclick="saveEditProduct(\''+productID+'\')" class="btn btn-sm btn-pink" style="font-size:10px;">Save</button></td>';
+      row.innerHTML='<td><input id="ep-name" class="form-input" style="padding:14px;font-size:16px;width:100%" value="'+escAttr(p.Name)+'"></td>'
+        +'<td><input id="ep-price" type="number" inputmode="numeric" class="form-input" style="padding:14px;font-size:16px;width:120px" value="'+Number(p.Price||0)+'"></td>'
+        +'<td><button onclick="saveEditProduct(\''+productID+'\')" class="btn btn-pink" style="padding:12px 24px;font-size:14px;">Simpan</button></td>';
       tb.prepend(row);
       document.getElementById('ep-name').focus();
     }
-    function scanEditProduct(){
-      openScanner(code=>{
-        const bc=document.getElementById('ep-barcode');
-        const sku=document.getElementById('ep-sku');
-        if(bc)bc.value=code;
-        let msg='Barcode terbaca: '+code;
-        if(sku){
-          if(!sku.value.trim()){ sku.value=code; msg+=' · SKU otomatis'; }
-        }
-        showToast(msg);
-      });
-    }
+    /* scanNewProduct/scanEditProduct - barcode input dihilangkan, hapus referensi */
+    function scanEditProduct(){showToast('Fitur barcode tidak aktif pada form ini.')}
     async function saveEditProduct(productID){
       const name=(document.getElementById('ep-name')||{}).value||'';
-      const sku=(document.getElementById('ep-sku')||{}).value||'';
-      const barcode=(document.getElementById('ep-barcode')||{}).value||'';
       const price=Number((document.getElementById('ep-price')||{}).value)||0;
-      const min=Number((document.getElementById('ep-min')||{}).value)||0;
       if(!name){showToast('Nama barang wajib!');return;}
       try{
-        await apiCall('save-product',{productID:productID,sku:sku,name:name,barcode:barcode,price:price,category:'',stockMin:min},state.token);
+        await apiCall('save-product',{productID:productID,name:name,price:price,category:''},state.token);
         showToast('Perubahan tersimpan ✓');
         try{const pd=await apiCall('get-products',{},state.token);state.products=pd.products||[];}catch(e){}
         loadProducts();
@@ -937,13 +907,10 @@
     }
     async function saveProduct(){
       const name=(document.getElementById('np-name')||{}).value||'';
-      const sku=(document.getElementById('np-sku')||{}).value||'';
-      const barcode=(document.getElementById('np-barcode')||{}).value||'';
       const price=Number((document.getElementById('np-price')||{}).value)||0;
-      const min=Number((document.getElementById('np-min')||{}).value)||0;
       if(!name){showToast('Nama barang wajib!');return;}
       try{
-        await apiCall('save-product',{productID:('P-'+Date.now()),sku:sku,name:name,barcode:barcode,price:price,category:'',stockMin:min},state.token);
+        await apiCall('save-product',{productID:('P-'+Date.now()),name:name,price:price,category:''},state.token);
         showToast('Barang ditambahkan ✓');
         try{const pd=await apiCall('get-products',{},state.token);state.products=pd.products||[];}catch(e){}
         loadProducts();
